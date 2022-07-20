@@ -1,13 +1,16 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState, Fragment } from "react";
+import { Background } from "react-flow-renderer";
+import { Popover, Transition } from "@headlessui/react";
+
 import ReactFlow, {
   applyEdgeChanges,
   applyNodeChanges,
 } from "react-flow-renderer";
-import { Background } from "react-flow-renderer";
+
 import {
   CheckCircleIcon,
-  CheckIcon,
-  XCircleIcon,
+  ChevronRightIcon,
+  SearchIcon,
 } from "@heroicons/react/solid";
 
 const initialNodes = [
@@ -46,13 +49,6 @@ const initialNodes = [
     position: { x: 980, y: 80 },
     targetPosition: "left",
   },
-  {
-    id: "6",
-    data: { label: "Log system" },
-    position: { x: 500, y: 150 },
-    targetPosition: "left",
-    type: "output",
-  },
 ];
 
 const initialEdges = [
@@ -62,12 +58,20 @@ const initialEdges = [
     target: "2",
     animated: true,
     label: "/api/customer/accounts",
+    markerEnd: {
+      type: "arrowclosed",
+      color: "#22c55e",
+    },
   },
   {
     id: "e2-3",
     source: "2",
     target: "3",
     animated: true,
+    markerEnd: {
+      type: "arrowclosed",
+      color: "#22c55e",
+    },
   },
   {
     id: "e3-4",
@@ -75,6 +79,10 @@ const initialEdges = [
     target: "4",
     animated: true,
     label: "getCustomerAccounts()",
+    markerEnd: {
+      type: "arrowclosed",
+      color: "#22c55e",
+    },
   },
   {
     id: "e3-5",
@@ -82,41 +90,10 @@ const initialEdges = [
     target: "5",
     animated: true,
     label: "getCustomerStatus()",
-  },
-  {
-    id: "e1-6",
-    source: "1",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e2-6",
-    source: "2",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e3-6",
-    source: "3",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e4-6",
-    source: "4",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e5-6",
-    source: "5",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
+    markerEnd: {
+      type: "arrowclosed",
+      color: "#22c55e",
+    },
   },
 ];
 
@@ -157,13 +134,13 @@ const errorNodes = [
     targetPosition: "left",
     style: { border: "1px solid red" },
   },
-  {
-    id: "6",
-    data: { label: "Log system" },
-    position: { x: 500, y: 150 },
-    targetPosition: "left",
-    type: "output",
-  },
+  // {
+  //   id: "6",
+  //   data: { label: "Log system" },
+  //   position: { x: 500, y: 150 },
+  //   targetPosition: "left",
+  //   type: "output",
+  // },
 ];
 
 const errorEdges = [
@@ -195,46 +172,12 @@ const errorEdges = [
     label: "getCustomerStatus()",
     style: { stroke: "red" },
   },
-  {
-    id: "e1-6",
-    source: "1",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e2-6",
-    source: "2",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e3-6",
-    source: "3",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e4-6",
-    source: "4",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
-  {
-    id: "e5-6",
-    source: "5",
-    target: "6",
-    animated: true,
-    type: "smoothstep",
-  },
 ];
 
 export default function Home() {
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
+  const [nodeSelected, setNodeSelected] = useState(false);
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -245,8 +188,13 @@ export default function Home() {
     [setEdges]
   );
 
+  function handeNodeClick(e, node) {
+    setNodeSelected(node);
+    console.log(node);
+  }
+
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 h-full">
       <header className="p-4 flex items-center">
         <Logo />
         <h1 className="font-bold text-gray-600 uppercase w-full text-center mt-1 flex flex-col">
@@ -256,64 +204,178 @@ export default function Home() {
           <span>Traza de operaciones</span>
         </h1>
       </header>
-      <div className="container mx-auto mt-12 bg-white p-8 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-gray-800 text-sm font-semibold uppercase">
-              Operación / Trace ID
+
+      <div className="flex mx-5 space-x-5 mt-12">
+        <div>
+          <h3 className="px-2 text-gray-700 uppercase text-sm font-semibold">
+            Operaciones
+          </h3>
+
+          <form className="px-1 mt-2.5 relative">
+            <SearchIcon className="h-4 w-4 text-gray-500 absolute inset-y-0 my-auto left-3" />
+            <input
+              type="text"
+              placeholder="Buscar"
+              className="rounded-md bg-gray-200 border-none py-1.5 placeholder-gray-400 text-sm w-full pl-7 focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-none"
+            />
+          </form>
+
+          <div className="bg-white rounded-lg shadow w-96">
+            <ul className="mt-4 flex flex-col divide-y">
+              <li>
+                <a
+                  href="#"
+                  className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100"
+                >
+                  <span>2022-06-30T15:57:25.023Z</span>
+                  <ChevronRightIcon className="h-5 w-5" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100 bg-gray-100"
+                >
+                  <span>2022-06-30T15:57:31.749Z</span>
+                  <ChevronRightIcon className="h-5 w-5" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100"
+                >
+                  <span>2022-06-30T15:57:37.039Z</span>
+                  <ChevronRightIcon className="h-5 w-5" />
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="container mx-auto bg-white p-8 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-800 text-sm font-semibold uppercase">
+                Operación / Trace ID
+              </div>
+              <div className="text-sm font-mono text-gray-600 mt-1">
+                6080e07-313a-4d64-841a-78fa6c562fc6
+              </div>
+              <div className="text-sm font-mono text-gray-600">
+                2022-06-29T20:01:43.603Z
+              </div>
             </div>
-            <div className="text-sm font-mono text-gray-600 mt-1">
-              6080e07-313a-4d64-841a-78fa6c562fc6
-            </div>
-            <div className="text-sm font-mono text-gray-600">
-              2022-06-29T20:01:43.603Z
-            </div>
+
+            <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
           </div>
 
-          <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
-        </div>
-
-        <div className="h-96 w-full">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            fitView
-          >
-            <Background />
-          </ReactFlow>
-        </div>
-      </div>
-
-      <div className="container mx-auto mt-8 bg-white p-8 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-gray-800 text-sm font-semibold uppercase">
-              Operación / Trace ID
-            </div>
-            <div className="text-sm font-mono text-gray-600 mt-1">
-              25579fdc-bf73-45ca-8f09-73e5bb0802f9
-            </div>
-            <div className="text-sm font-mono text-gray-600">
-              2022-06-29T20:15:29.028Z
-            </div>
+          <div className="h-96 w-full">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onNodeClick={handeNodeClick}
+              onEdgesChange={onEdgesChange}
+              onPaneClick={() => setNodeSelected(false)}
+              fitView
+            >
+              <Background />
+            </ReactFlow>
           </div>
 
-          <XCircleIcon className="h-5 w-5 text-red-500" />
+          {nodeSelected && (
+            <div className="mt-4">
+              <h3 className="font-semibold text-gray-800 text-xs uppercase">
+                General
+              </h3>
+              <ul className="mt-1 text-xs text-gray-700 font-mono">
+                <li>Request URL: http://localhost:3000/</li>
+                <li>Request Method: GET</li>
+                <li>Status Code: 200 OK</li>
+                <li>Referrer Policy: strict-origin-when-cross-origin</li>
+              </ul>
+
+              <h3 className="mt-4 font-semibold text-gray-800 text-xs uppercase">
+                Request
+              </h3>
+              <ul className="mt-1 text-xs text-gray-700 font-mono">
+                <li>
+                  Accept:
+                  text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+                </li>
+                <li>Accept-Encoding: gzip, deflate, br</li>
+                <li>
+                  Accept-Language:
+                  es-ES,es;q=0.9,en;q=0.8,eo;q=0.7,it;q=0.6,gl;q=0.5
+                </li>
+                <li>Cache-Control: max-age=0</li>
+                <li>Connection: keep-alive</li>
+                <li>Host: localhost:3000</li>
+                <li>
+                  sec-ch-ua: ".Not/A)Brand";v="99", "Google Chrome";v="103",
+                  "Chromium";v="103"
+                </li>
+                <li>sec-ch-ua-mobile: ?0</li>
+                <li>sec-ch-ua-platform: "macOS"</li>
+                <li>Sec-Fetch-Dest: document</li>
+                <li>Sec-Fetch-Mode: navigate</li>
+                <li>Sec-Fetch-Site: same-origin</li>
+                <li>Sec-Fetch-User: ?1</li>
+                <li>Upgrade-Insecure-Requests: 1</li>
+                <li>
+                  User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+                  AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0
+                  Safari/537.36
+                </li>
+              </ul>
+
+              <h3 className="mt-4 font-semibold text-gray-800 text-xs uppercase">
+                Response
+              </h3>
+              <ul className="mt-1 text-xs text-gray-700 font-mono">
+                <li>Cache-Control: no-store, must-revalidate</li>
+                <li>Connection: keep-alive</li>
+                <li>Content-Encoding: gzip</li>
+                <li>Content-Type: text/html; charset=utf-8</li>
+                <li>Date: Wed, 20 Jul 2022 17:18:23 GMT</li>
+                <li>Keep-Alive: timeout=5</li>
+                <li>Transfer-Encoding: chunked</li>
+                <li>Vary: Accept-Encoding</li>
+                <li>X-Powered-By: Next.js</li>
+              </ul>
+            </div>
+          )}
         </div>
 
-        <div className="h-96 w-full">
-          <ReactFlow
-            nodes={errorNodes}
-            edges={errorEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            fitView
-          >
-            <Background />
-          </ReactFlow>
-        </div>
+        {/* <div className="container mx-auto mt-8 bg-white p-8 rounded-lg shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-800 text-sm font-semibold uppercase">
+                Operación / Trace ID
+              </div>
+              <div className="text-sm font-mono text-gray-600 mt-1">
+                25579fdc-bf73-45ca-8f09-73e5bb0802f9
+              </div>
+              <div className="text-sm font-mono text-gray-600">
+                2022-06-29T20:15:29.028Z
+              </div>
+            </div>
+
+            <XCircleIcon className="h-5 w-5 text-red-500" />
+          </div>
+
+          <div className="h-96 w-full">
+            <ReactFlow
+              nodes={errorNodes}
+              edges={errorEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              fitView
+            >
+              <Background />
+            </ReactFlow>
+          </div>
+        </div> */}
       </div>
     </div>
   );
