@@ -256,7 +256,7 @@ export default function Transactions() {
                                             href="#"
                                             className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100"
                                             >
-                                            <span>{moment.unix(item.timestamp).format('dddd, MMMM Do, YYYY h:mm:ss A')}</span>
+                                            <span>{moment(item.timestamp).format('dddd, MMMM Do, YYYY h:mm:ss A')}</span>
                                             <ChevronRightIcon className="h-5 w-5" />
                                             </a>
                                         </li>
