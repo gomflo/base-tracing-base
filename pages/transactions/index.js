@@ -7,6 +7,7 @@ moment.updateLocale('es',{
     months : 'enero_febrero_marzo_abrir_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre'.split('_')
 })
 
+import ToastBase from '../../components/miscellaneous/ToastBase';
 import Logo from "../../components/miscellaneous/Logo";
 
 import {
@@ -193,12 +194,12 @@ export default function Transactions() {
             console.log(data.data);
             setTransactions(data.data);
         }
-
-        
     }
 
+    
     return (
         <div className="bg-gray-50 h-screen">
+            <ToastBase message='Se encontraron los siguientes resultados.' style='warning' show={true}/>
             <header className="p-4 flex items-center">
                 <Logo />
                 <h1 className="font-bold text-gray-600 uppercase w-full text-center mt-1 flex flex-col">
