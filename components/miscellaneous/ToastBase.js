@@ -6,8 +6,8 @@ import {
 } from "@heroicons/react/24/outline";
 
 import React, {useState, useEffect} from 'react'
-const ToastBase = ({message, style, show}) => {
-    const [showToast, setShowToast] = useState(show);
+const ToastBase = ({message, style, setShowToast}) => {
+    
     const [styleToast] = useState(style);
     
 
@@ -40,7 +40,7 @@ const ToastBase = ({message, style, show}) => {
     }, [style]);
 
     return ( 
-    <div className={template.background+' flex absolute top-5 right-5 items-center p-4 mb-4 w-full max-w-xs rounded-lg shadow float-right '+(showToast ? '':'hidden')} role="alert">
+    <div className={template.background+' flex absolute top-5 right-5 items-center p-4 mb-4 w-full max-w-xs rounded-lg shadow float-right '} role="alert">
         
         {template.icon}
         

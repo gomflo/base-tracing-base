@@ -2,13 +2,11 @@
 import React, {useState, useCallback} from 'react'
 import axios from 'axios';
 import moment from 'moment';
-moment.updateLocale('es',{
-    weekdays : 'domingo_lunes_martes_miercoles_jueves_viernes_sabado'.split('_'),
-    months : 'enero_febrero_marzo_abrir_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre'.split('_')
-})
+moment.updateLocale('es',{weekdays : 'domingo_lunes_martes_miercoles_jueves_viernes_sabado'.split('_'),months : 'enero_febrero_marzo_abrir_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre'.split('_')});
 
 import ToastBase from '../../components/miscellaneous/ToastBase';
 import Logo from "../../components/miscellaneous/Logo";
+import Pagination from '../../components/Pagination';
 
 import {
     CheckCircleIcon,
@@ -154,9 +152,16 @@ export default function Transactions() {
     const [edges, setEdges] = useState(initialEdges);
     const [nodeSelected, setNodeSelected] = useState(false);
 
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [toastType, setToastType] = useState("success");
+
     const [idFind, setIdFind] = useState('');
     const [datesFind, setDatesFind] = useState({fromDate : '', toDate : ''});
-    const [transactions, setTransactions] = useState([]);
+    const [transactions, setTransactions] = useState({});
+
+    const [limit] = useState(40);
+    const [page, setPage] = useState(0);
 
     const onNodesChange = useCallback(
         (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -173,8 +178,12 @@ export default function Transactions() {
         console.log(node);
     }
 
-    const getTransaction = async (e) => {
-        e.preventDefault();
+    const handleClickPagination = (page) => {
+      setPage(page-1);
+      getTransaction(page-1);
+    }
+
+    const getTransaction = async (defaultPage) => {
 
         const payload = {...datesFind,id: idFind}
 
@@ -182,16 +191,27 @@ export default function Transactions() {
         if(payload.fromDate.trim() === ''){delete payload.fromDate}
         if(payload.toDate.trim() === ''){delete payload.toDate}
 
+        payload.limit = limit;
+        payload.page = defaultPage ? defaultPage : page;
+
         const {data} = await axios.get(process.env.NEXT_PUBLIC_HOST_API+'/tracing',{
             params: payload
         })
 
         if(data.data.length <= 0){
-            alert('No hay resultados');
-            setTransactions([]);
+            setShowToast(true);
+            setToastMessage('No se encontraron registros.');
+            setToastType('warning');
+            setTransactions({});
             return false;
         }else{
-            console.log(data.data);
+            
+            if(!defaultPage){
+              setShowToast(true);
+              setToastMessage('Se encontraron los siguientes registros.');
+              setToastType('success');
+            }
+            
             setTransactions(data.data);
         }
     }
@@ -199,7 +219,7 @@ export default function Transactions() {
     
     return (
         <div className="bg-gray-50 h-screen">
-            <ToastBase message='Se encontraron los siguientes resultados.' style='warning' show={true}/>
+            {showToast && <ToastBase message={toastMessage} style={toastType} setShowToast={setShowToast}/>}
             <header className="p-4 flex items-center">
                 <Logo />
                 <h1 className="font-bold text-gray-600 uppercase w-full text-center mt-1 flex flex-col">
@@ -210,9 +230,9 @@ export default function Transactions() {
                 </h1>
             </header>
 
-            <div className="flex mx-5 space-x-5 mt-12">
-                <div>
-                    <form className="px-1 mt-2.5 relative" onSubmit={getTransaction}>
+            <div className="flex mx-5 space-x-5 mt-12 h-screen">
+                <div className='h-auto'>
+                    <form className="px-1 mt-2.5 relative" onSubmit={(e) => {e.preventDefault();getTransaction()}}>
                         <div>
                             <h3 className="text-gray-700 uppercase text-sm font-semibold">
                                 Operaciones
@@ -246,25 +266,34 @@ export default function Transactions() {
                             Buscar
                         </button>
                     </form>
-
-                    <div className="bg-white rounded-lg shadow w-96">
-                        <ul className="mt-4 flex flex-col divide-y">
-                            {
-                                transactions.map((item) => {
-                                    return (
-                                        <li key={item._id}>
-                                            <a
-                                            href="#"
-                                            className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100"
-                                            >
-                                            <span>{moment(item.timestamp).format('dddd, MMMM Do, YYYY h:mm:ss A')}</span>
-                                            <ChevronRightIcon className="h-5 w-5" />
-                                            </a>
-                                        </li>
-                                    )
-                                })
-                            }
-                        </ul>
+                
+                    <div className='w-96'>
+                    {
+                      transactions.transactions && (<>
+                      <div className="bg-white rounded-lg shadow overflow-auto my-5" style={{height : 'calc(100vh - 460px)'}}>
+                          <ul className="mt-4 flex flex-col divide-y">
+                              {
+                                  Object.keys(transactions.transactions).map((x) => {
+                                      let item = transactions.transactions[x];
+                                      
+                                      return (
+                                          <li key={x}>
+                                              <a
+                                              href="#"
+                                              className="text-xs px-4 py-1.5 flex font-medium items-center justify-between text-gray-700 hover:bg-gray-100"
+                                              >
+                                                <span>{x}</span>
+                                              <ChevronRightIcon className="h-5 w-5" />
+                                              </a>
+                                          </li>
+                                      )
+                                  })
+                              }
+                          </ul>
+                      </div>
+                        <Pagination total={transactions.pagination.numPage} currentPage={page} onClick={handleClickPagination}/>
+                      </>)
+                    }
                     </div>
                 </div>
                 <div className="container mx-auto bg-white p-8 rounded-lg shadow">
